@@ -1,59 +1,70 @@
 pragma solidity ^0.6.1;
 
 contract BloceducareCerts{
+    
 	//global variable
 	address private admin;
-	mapping  (bytes => bool) private certificates;
-	
+
+	struct Certificate{
+	address participantAddress;
+	string name;
+	string award;
+	string project;
+	uint   grade;
+	uint   dateCreated;
+	uint   dateIssued;
+	}
+
+	string[] certificateList;
+	//mapping
+	mapping(address => Certificate) public certificates;
+	mapping(string => 	mapping(address => Certificate)) public byName;
+	mapping(string => bool) private isParticipant;
+
 	//events
-	event certAdded(bytes hash);
-	event certRemoved(bytes hash);
-	
+	event certRemoved(string _msg,address _participantAddress,string _msg2,string at,uint time);
+	event certCreated(string _msg,string _name,string _with, address participant, string by,address creator,uint time);
+	event cerVerified(string _msg, address addressVerified);
+	event Participant(address addressVerified,string _msg);
 	//modifier
 	modifier onlyAdmin(){
 		require(msg.sender == admin, "Accessible by only Admin");
-		_;
+	_;
 	}
-	
-	//verify that a cert must be added
-	modifier certMustBeAdded(bytes memory hash){
-	    require(certificates[hash] == true,"Cert doesn't exist");
-	    _;
-	}
-	
-	//verify that a cert must be not added
-	modifier certMustBeNotAdded(bytes memory hash){
-	    require(certificates[hash] == false,"Cert already was added");
-	    _;
-	}
-	
 	constructor() public{
 		admin = msg.sender;
 	}
-	
-	//if it should be possible to add many certs at a time, 
-	//implement a method like
-	//addCert(bytes[] memory hash)
-	//You'll pay less fees making all in only one transaction!
-	
-	//dont let transaction go if cert is already added
-	function addCert(bytes memory hash) 
-	certMustBeNotAdded(hash) 
-	onlyAdmin 
-	public{
-		certificates[hash] = true;
-		emit certAdded(hash);
+	//Allows Admin to create certificates
+	function createCertificate(address __participantAddress,
+	string memory __name, string memory __award,
+	string memory __project,uint __grade) public onlyAdmin {
+	certificates[__participantAddress] = Certificate({
+	    participantAddress:__participantAddress,
+	    name : __name,
+	    award : __award,
+	    project:__project,
+	    grade: __grade,
+	    dateCreated:now,
+	    dateIssued:now
+	});
+	certificateList.push(__name);
+     	emit certCreated("A new certificate has been created for:",__name,"with address:",__participantAddress,"by:",msg.sender,now);
 	}
-	
-	//Dont let transaction go if cert doesnt exist
-	function removeCert(bytes memory hash) 
-	certMustBeAdded(hash) 
-	onlyAdmin public{
-		certificates[hash] = false;
-		emit certRemoved(hash);
+	//Allows admin to remove a certificate.
+	//This function should be called only when there is an creating a certificate
+		function removeCertificate(address __participantAddress) onlyAdmin public{
+		delete certificates[__participantAddress];
+		emit certRemoved("A certificate belonging to:",__participantAddress,"has been deleted","at",now);
 	}
-	
-	function verifyCert(bytes memory hash) public view returns(bool){
-		return (certificates[hash]);
+	function checkParticipant(address __participantAddress) external  {
+	     Certificate memory _cert;
+        _cert.participantAddress = __participantAddress;
+	   emit Participant(__participantAddress,"is a participant");
 	}
+	function issueCert() public{
+	}
+	function verifyCertByAddress(address __participantAddress) public view returns(bool){
+	   
+	   }
+
 }
